@@ -1,20 +1,25 @@
 pipeline {
   agent any
+
   environment {
     IMAGE = 'anandhuraj111/containerized-java'
-    DOCKER_CREDS = credentials('docker-id') // Make sure this ID exists in Jenkins
+    DOCKER_CREDS = credentials('docker-id') // This must exist in Jenkins
   }
+
   stages {
+
     stage('Checkout') {
       steps {
         git branch: 'main', url: 'https://github.com/bhuvan-raj/Jenkins-JavaDockerized.git'
       }
     }
+
     stage('Build JAR') {
       steps {
         bat 'mvn clean package -DskipTests'
       }
     }
+
     stage('Generate Dockerfile') {
       steps {
         script {
@@ -28,31 +33,39 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
         }
       }
     }
+
     stage('Build Docker Image') {
       steps {
         script {
-          docker.build(IMAGE)
+          docker.build("${IMAGE}:latest")
         }
       }
     }
+
     stage('Push to DockerHub') {
       steps {
         script {
           withCredentials([usernamePassword(credentialsId: 'docker-id', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-            bat 'echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin'
-            bat 'docker push $IMAGE:latest'
-            bat 'docker tag $IMAGE:latest $IMAGE:latest'
+            bat 'docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%'
+            bat 'docker tag %IMAGE%:latest %IMAGE%:latest'
+            bat 'docker push %IMAGE%:latest'
           }
         }
       }
     }
+
     stage('Run Container') {
       steps {
-        bat 'docker rm -f javaapp || true'
-        bat 'docker run -d -p 7500:8080 --name javaapp $IMAGE:latest'
+        // Remove container if it exists
+        bat 'docker rm -f javaapp || echo "Container not found, skipping removal"'
+
+        // Run the container
+        bat 'docker run -d -p 7500:8080 --name javaapp %IMAGE%:latest'
       }
     }
+
   }
+
   post {
     always {
       bat 'docker logout'
