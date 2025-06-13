@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     IMAGE = 'anandhuraj111/containerized-java'
-    DOCKER_CREDS = credentials('docker-id') // This must exist in Jenkins
+    DOCKER_CREDS = credentials('docker-id')
   }
 
   stages {
@@ -36,9 +36,7 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 
     stage('Build Docker Image') {
       steps {
-        script {
-          docker.build("${IMAGE}:latest")
-        }
+        bat 'docker build -t %IMAGE%:latest .'
       }
     }
 
@@ -47,7 +45,6 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
         script {
           withCredentials([usernamePassword(credentialsId: 'docker-id', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
             bat 'docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%'
-            bat 'docker tag %IMAGE%:latest %IMAGE%:latest'
             bat 'docker push %IMAGE%:latest'
           }
         }
@@ -56,14 +53,10 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 
     stage('Run Container') {
       steps {
-        // Remove container if it exists
-        bat 'docker rm -f javaapp || echo "Container not found, skipping removal"'
-
-        // Run the container
+        bat 'docker rm -f javaapp || echo "No container to remove"'
         bat 'docker run -d -p 7500:8080 --name javaapp %IMAGE%:latest'
       }
     }
-
   }
 
   post {
