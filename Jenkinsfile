@@ -12,7 +12,7 @@ pipeline {
     }
     stage('Build JAR') {
       steps {
-        sh 'mvn clean package -DskipTests'
+        bat 'mvn clean package -DskipTests'
       }
     }
     stage('Generate Dockerfile') {
@@ -39,23 +39,23 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
       steps {
         script {
           withCredentials([usernamePassword(credentialsId: 'docker-id', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-            sh 'docker push $IMAGE:latest'
-            sh 'docker tag $IMAGE:latest $IMAGE:latest'
+            bat 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+            bat 'docker push $IMAGE:latest'
+            bat 'docker tag $IMAGE:latest $IMAGE:latest'
           }
         }
       }
     }
     stage('Run Container') {
       steps {
-        sh 'docker rm -f javaapp || true'
-        sh 'docker run -d -p 7500:8080 --name javaapp $IMAGE:latest'
+        bat 'docker rm -f javaapp || true'
+        bat 'docker run -d -p 7500:8080 --name javaapp $IMAGE:latest'
       }
     }
   }
   post {
     always {
-      sh 'docker logout'
+      bat 'docker logout'
     }
   }
 }
