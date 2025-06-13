@@ -39,7 +39,7 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
       steps {
         script {
           withCredentials([usernamePassword(credentialsId: 'docker-id', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-            bat 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+            bat 'echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin'
             bat 'docker push $IMAGE:latest'
             bat 'docker tag $IMAGE:latest $IMAGE:latest'
           }
